@@ -65,9 +65,8 @@ read_col_names <- read_excel("./Data/Table_10.1_Renewable_Energy_Production_and_
 head(Energy_Data) 
 head(read_col_names)
 
-colnames(Energy_Data) <- col_names
-head(Energy_Data)
-tail(Energy_Data)
+colnames(Energy_Data) <- read_col_names
+
 
 ```
 
