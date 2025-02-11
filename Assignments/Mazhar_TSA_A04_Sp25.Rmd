@@ -7,6 +7,11 @@ geometry: margin=2.54cm
 editor_options: 
   chunk_output_type: console
 ---
+ 
+```{r setup, warning=FALSE, echo=FALSE}
+knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE)
+knitr::opts_knit$set(root.dir = "~/TSA_Sp25/TSA_Sp25")
+```
   
 ## Directions
   
@@ -32,9 +37,7 @@ library(stargazer)
 library(readxl)
 library(trend)
 library(tseries)
-knitr::opts_chunk$set(echo = TRUE,tidy.opts=list(width.cutoff=80), tidy=FALSE)
-knitr::opts_knit$set(root.dir = "/home/guest/TSA_Mazhar/Time_Series_Mazhar")
-
+library(Kendall)
 ```
 
 ## Questions 
@@ -84,13 +87,14 @@ Difference the "Total Renewable Energy Production" series using function diff().
 Try differencing at lag 1 only once, i.e., make `lag=1` and `differences=1`. Plot the differenced series. Do the series still seem to have trend?
 
 
-```{r}
+```{r, warning=FALSE}
 Renewable_Production_diff <- diff(Renewable_Energy_Data_ts, 
                                   lag = 1, 
                                   differences = 1
 )
 
-ts_plot <- autoplot(Renewable_Energy_Data_ts) +
+ts_plot <- autoplot(Renewable_Energy_Data_ts,
+                    color = "cadetblue4") +
           xlab("Time") +
           ylab("Energy[Trillion Btu]") +
           geom_hline(yintercept = mean(Renewable_Energy_Data_ts), 
@@ -100,7 +104,8 @@ ts_plot <- autoplot(Renewable_Energy_Data_ts) +
           theme_minimal()
 #print(ts_plot)
   
-diff_plot <- autoplot(Renewable_Production_diff) +
+diff_plot <- autoplot(Renewable_Production_diff,
+                      color = "cadetblue4") +
           xlab("Time") +
           ylab("Energy[Trillion Btu]")+
           geom_hline(yintercept = mean(Renewable_Production_diff), 
@@ -124,7 +129,7 @@ plot_grid(title,plot_comparison,nrow=2,ncol=1,rel_heights = c(0.1,1))
 Copy and paste part of your code for A3 where you run the regression for Total Renewable Energy Production and subtract that from the original series. This should be the code for Q3 and Q4. make sure you use the same name for you time series object that you had in A3, otherwise the code will not work.
 
 
-```{r}
+```{r, warning=FALSE}
 ## Linear Fit Model
 lm_renewable=lm(Renewable_Energy_Data_ts~t)
 beta0_renewable=lm_renewable$coefficients[1]
@@ -164,11 +169,29 @@ Using autoplot() + autolayer() create a plot that shows the three series togethe
 
 What can you tell from this plot? Which method seems to have been more efficient in removing the trend?
 
-```{r}
+```{r, warning=FALSE}
 
-plot_comparison <- plot_grid(ts_plot,detrend_plot, diff_plot,
-                             nrow=1,ncol=3)
+plot_comparison <- autoplot(Renewable_Energy_Data_ts, 
+                            series = "Original") +
+  autolayer(detrended_renewable, 
+            series = "Detrended") +
+  autolayer(Renewable_Production_diff, 
+            series = "Differenced") +
+  scale_color_manual(
+    values = c("Original" = "brown", 
+               "Detrended" = "darkblue", 
+               "Differenced" = "coral")) +
+  ggtitle("") +
+  xlab("Time") +
+  ylab("Energy [Trillion Btu]") +
+  geom_hline(yintercept = mean(Renewable_Energy_Data_ts), color = "brown", linetype = "solid") +
+  geom_hline(yintercept = mean(Renewable_Production_diff), color = "coral", linetype = "solid") +
+  geom_hline(yintercept = mean(detrended_renewable), color = "darkblue", linetype = "dashed") +
+  theme_minimal() +
+  theme(legend.position = "bottom")
+
 #print(plot_comparison)
+
 title <- ggdraw() + 
           draw_label("Renewable Energy Production", fontface='bold')
 plot_grid(title,plot_comparison,nrow=2,ncol=1,rel_heights = c(0.1,1))
@@ -183,20 +206,23 @@ plot_grid(title,plot_comparison,nrow=2,ncol=1,rel_heights = c(0.1,1))
 ### Q4
 Plot the ACF for the three series and compare the plots. Add the argument `ylim=c(-0.5,1)` to the autoplot() or Acf() function - whichever you are using to generate the plots - to make sure all three y axis have the same limits. Looking at the ACF which method do you think was more efficient in eliminating the trend? The linear regression or differencing?
 
-```{r}
-acf_renewable_ts <- ggAcf(Renewable_Energy_Data_ts, lag.max = 40)+
+```{r, warning=FALSE}
+acf_renewable_ts <- ggAcf(Renewable_Energy_Data_ts, lag.max = 40,
+                          color = "brown")+
                     ggtitle("Original") +
                     ylim(c(-0.5,1)) +
                     theme_minimal()
 #print(acf_renewable_ts)
 
-acf_detrended_renewable <- ggAcf(detrended_renewable,lag.max = 40) +
+acf_detrended_renewable <- ggAcf(detrended_renewable,lag.max = 40,
+                                 color = "brown") +
                             ggtitle("Acf:Detrend") +
                             ylim(c(-0.5,1)) +
                             theme_minimal()
 #print(acf_detrended_renewable)
 
-acf_diff_renewable <-ggAcf(Renewable_Production_diff, lag.max = 40) +
+acf_diff_renewable <-ggAcf(Renewable_Production_diff, lag.max = 40,
+                           color = "brown") +
                       ggtitle("Acf:Differenced") +
                       ylim(c(-0.5,1)) +
                       theme_minimal()
@@ -223,9 +249,10 @@ plot_grid(title,acf_plot_comparison,nrow=2,ncol=1,rel_heights = c(0.1,1))
 ### Q5
 Compute the Seasonal Mann-Kendall and ADF Test for the original "Total Renewable Energy Production" series. Ask R to print the results. Interpret the results for both test. What is the conclusion from the Seasonal Mann Kendall test? What's the conclusion for the ADF test? Do they match what you observed in Q3 plot? Recall that having a unit root means the series has a stochastic trend. And when a series has stochastic trend we need to use differencing to remove the trend.
 
-```{r}
-smk_test <- smk.test(Renewable_Energy_Data_ts)
-print(smk_test)
+```{r, warning=FALSE}
+summary(SeasonalMannKendall(Renewable_Energy_Data_ts))
+print(smk.test(Renewable_Energy_Data_ts))
+
 
 adf_test <- adf.test(Renewable_Energy_Data_ts)
 print(adf_test)
@@ -233,15 +260,17 @@ print(adf_test)
 
 > Answer: 
 
->SMK Test: p-value the of the original time series of renewable data is extremely small (< 0.05), so we reject the null hypothesis (H₀). This means that there is a statistically significant trend in the time series. 
+>SMK Test: p-value the of the original time series of renewable data is extremely small (< 0.05), so we reject the null hypothesis (Ho). This means that there is a statistically significant trend in the time series. 
 
 >  Test Statistic (z = 28.601). A large positive z value suggests an increasing trend in the series. 
 
-> S Statistic, S = 12468. It suggest an upward trend in the data. 
+> S Statistic, S = 12468. It suggest an upward trend in the data.
+
+> The tau = 0.791 is close to 1, meaning there is a strong correlation between time and increasing values in the series. This confirms that renewable energy production has consistently grown over time.
 
 > The Total Renewable Energy Production time series has an increasing trend. This suggests that the production of renewable energy has been steadily rising over time. Since the test confirms a trend, the series is likely non-stationary.
 
-> ADF Test: The p-value (0.9242) is very high (> 0.05), meaning we fail to reject the null hypothesis (H₀) meaning we accept the null hypothesis of having an unit root. The time series has a unit root and is not stationary.
+> ADF Test: The p-value (0.9242) is very high (> 0.05), meaning we fail to reject the null hypothesis (Ho) meaning we accept the null hypothesis of having an unit root. The time series has a unit root and is not stationary.
 
 >> As expected from the plot of Q3 we can see that time series has a stochastic trend which can be removed by differencing. 
 
@@ -249,7 +278,7 @@ print(adf_test)
 ### Q6
 Aggregate the original "Total Renewable Energy Production" series by year. You can use the same procedure we used in class. Store series in a matrix where rows represent months and columns represent years. And then take the columns mean using function colMeans(). Recall the goal is the remove the seasonal variation from the series to check for trend. Convert the accumulates yearly series into a time series object and plot the series using autoplot().
 
-```{r}
+```{r, warning=FALSE}
 ## Converting time series into a matrix (reshape data by year and month)
 
 years <- floor(time(Renewable_Energy_Data_ts))
@@ -279,11 +308,11 @@ autoplot(yearly_ts) +
 ### Q7
 Apply the Mann Kendall, Spearman correlation rank test and ADF. Are the results from the test in agreement with the test results for the monthly series, i.e., results for Q6?
 
-```{r}
+```{r, warning=FALSE}
 
 # Applying Mann-Kendall Trend Test
-mann_kendall_yearly <- mk.test(yearly_ts)
-print(mann_kendall_yearly)
+summary(MannKendall(yearly_ts))
+print(mk.test(yearly_ts))
 
 # Applying Spearman Rank Correlation Test
 spearman_yearly <- cor.test(time(yearly_ts), yearly_ts, method = "spearman")
@@ -292,12 +321,16 @@ print(spearman_yearly)
 # Applying Augmented Dickey-Fuller (ADF) Test
 adf_yearly <- adf.test(yearly_ts)
 print(adf_yearly)
-
-
-
 ```
 
 > Answer: 
 
+>The Mann-Kendall test shows a strong increasing trend in the yearly data. The tau value is 0.807, which indicates a significant upward movement. The p-value is less than 2.22e-16, which is much smaller than 0.05. This means we reject the null hypothesis (Ho) and confirm that a trend exists.
+
+>The Spearman rank correlation test also supports this finding. The rho value is 0.918552, showing a strong positive correlation over time. The p-value is less than 2.2e-16, which confirms that the trend is statistically significant. This means that as time progresses, renewable energy production has consistently increased.
+
+>The Augmented Dickey-Fuller (ADF) test, however, suggests that the data is non-stationary. The p-value is 0.7098, which is much higher than 0.05. Since the p-value is large, we fail to reject the null hypothesis (Ho) of a unit root. This means that the series has a stochastic trend, and differencing is needed to make it stationary.
+
+>These results match the findings from the monthly data analysis in Q6. Both the Mann-Kendall and Spearman tests confirm an increasing trend, while the ADF test shows that the data is non-stationary. This means that renewable energy production has been rising over time, but the series needs transformation to remove the trend.
 
 
