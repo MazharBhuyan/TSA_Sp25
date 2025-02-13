@@ -39,7 +39,7 @@ Today we will work with wind speed data.
 ```{r}
 
 #Importing time series data from text file#
-wind_data <- read.csv(file="./Data/Wind_Speed_PortArthurTX_Processed.csv",header=TRUE,stringsAsFactors = TRUE)
+wind_data <- read.csv(file="/Users/mazharulhaque/TSA_Sp25/TSA_Sp25/Data/Wind_Speed_PortArthurTX_Processed.csv",header=TRUE, stringsAsFactors = TRUE)
 
 #creating data object
 wind_data$DATE <- ym(wind_data$DATE)
@@ -78,10 +78,20 @@ autoplot(clean_wind_data, series="Wind Clean") +
 
 If you want to handle missing data, but do not want to remove outliers, here are two other opion that will replace them using linear interpolation.
 
-`forecast::na.interp()`
+'forecast::na.interp()'
 `zoo::na.approx()`
 
 
+clean_wind_data_fun2 <- forecast::na.interp (ts_wind_data)
+
+autoplot(clean_wind_data_fun2, series="Wind Clean") +
+  autolayer(ts_wind_data, series="Wind Raw") +
+  ylab("Average Wind Speed") 
 
 
-
+clean_wind_data_fun3 <- zoo::na.approx(ts_wind_data)
+autoplot(clean_wind_data_fun3, series="Wind Clean") +
+  autolayer(ts_wind_data, series="Wind Raw") +
+  ylab("Average Wind Speed") 
+  
+  
